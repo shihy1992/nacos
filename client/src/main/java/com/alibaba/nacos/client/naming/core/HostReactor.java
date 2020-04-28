@@ -235,6 +235,7 @@ public class HostReactor {
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
             updatingMap.put(serviceName, new Object());
+            //获取在服务端注册号的服务
             updateServiceNow(serviceName, clusters);
             updatingMap.remove(serviceName);
 
@@ -276,6 +277,7 @@ public class HostReactor {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
+            //利用服务端的代理对象去调用查询接口
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
 
             if (StringUtils.isNotEmpty(result)) {

@@ -293,10 +293,14 @@ public class NamingProxy {
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put("clusters", clusters);
+        //客户端的upd的端口号
         params.put("udpPort", String.valueOf(udpPort));
+        //获取客户端的ip地址，利用的是jdk的rt.jar中的代码
         params.put("clientIP", NetUtils.localIP());
         params.put("healthyOnly", String.valueOf(healthyOnly));
 
+        //调用服务端的接口。/nacos/v1/ns/instance/list。
+        //参考官网的openAPIhttps://nacos.io/zh-cn/docs/open-api.html#2.4
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
@@ -410,6 +414,7 @@ public class NamingProxy {
             url = HttpClient.getPrefix() + curServer + api;
         }
 
+        //利用HttpClient的代码发起一个rest请求
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
 
@@ -451,6 +456,7 @@ public class NamingProxy {
             for (int i = 0; i < servers.size(); i++) {
                 String server = servers.get(index);
                 try {
+                    //调用服务端的接口
                     return callServer(api, params, server, method);
                 } catch (NacosException e) {
                     exception = e;
@@ -562,6 +568,6 @@ public class NamingProxy {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-    
+
 }
 

@@ -302,7 +302,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
         return selectInstances(serviceName, new ArrayList<String>(), healthy);
     }
-
+    //通过NacosDiscoveryClient的public List<ServiceInstance> getInstances(String serviceId) 方法进行调用。但是该类在discovery项目中
     @Override
     public List<Instance> selectInstances(String serviceName, String groupName, boolean healthy) throws NacosException {
         return selectInstances(serviceName, groupName, healthy, true);
