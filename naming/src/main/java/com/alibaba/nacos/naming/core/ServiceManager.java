@@ -35,6 +35,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mockito.internal.util.StringJoiner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -62,6 +63,7 @@ public class ServiceManager implements RecordListener<Service> {
     /**
      * Map<namespace, Map<group::serviceName, Service>>
      */
+    //整个nacos注册表的核心，第一层map是namespace为key，定位到具体的namespace。第二层map是group+serviceName为key定位到具体的service
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
     private LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
@@ -429,8 +431,10 @@ public class ServiceManager implements RecordListener<Service> {
         createServiceIfAbsent(namespaceId, serviceName, local, null);
     }
 
+    //如果服务缺席，即创建一个空的，这里只是构造了一个内存的接口，并没正在的放入instance
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster) throws NacosException {
-        Service service = getService(namespaceId, serviceName);
+         //查看这个服务是否已经注册过了
+         Service service = getService(namespaceId, serviceName);
         if (service == null) {
 
             Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
@@ -466,6 +470,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
+        //创建一个空的service，并做服务健康的检查
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
         Service service = getService(namespaceId, serviceName);
@@ -474,7 +479,7 @@ public class ServiceManager implements RecordListener<Service> {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
-
+        //将instance放入的到上面创建的空的service中
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
@@ -622,7 +627,9 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public Service getService(String namespaceId, String serviceName) {
+        //判断之前是否是已经注册过了
         if (serviceMap.get(namespaceId) == null) {
+            //直接返回
             return null;
         }
         return chooseServiceMap(namespaceId).get(serviceName);
@@ -632,7 +639,9 @@ public class ServiceManager implements RecordListener<Service> {
         return getService(namespaceId, serviceName) != null;
     }
 
+    //将刚构造好的服务，放到内存的map中
     public void putService(Service service) {
+        //先构造外层map
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
                 if (!serviceMap.containsKey(service.getNamespaceId())) {
@@ -640,10 +649,12 @@ public class ServiceManager implements RecordListener<Service> {
                 }
             }
         }
+        //再构造内存map
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
 
     private void putServiceAndInit(Service service) throws NacosException {
+        //将刚构造好的服务，放到内存的map中
         putService(service);
         service.init();
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);

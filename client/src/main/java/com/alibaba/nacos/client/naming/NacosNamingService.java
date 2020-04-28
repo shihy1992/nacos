@@ -186,9 +186,10 @@ public class NacosNamingService implements NamingService {
         registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 
+    //客户端注册服务入口
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-
+        //如果实例是临时的
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
             beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
@@ -203,7 +204,7 @@ public class NacosNamingService implements NamingService {
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
-
+        //注册一个实例到服务
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 

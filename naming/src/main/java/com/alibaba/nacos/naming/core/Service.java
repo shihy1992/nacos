@@ -78,6 +78,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     private long pushCacheMillis = 0L;
 
+    //service里面存放的cluster
     private Map<String, Cluster> clusterMap = new HashMap<>();
 
     public Service() {
@@ -253,6 +254,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     public void init() {
 
+        //健康检查
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {

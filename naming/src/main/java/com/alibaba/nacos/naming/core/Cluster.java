@@ -22,8 +22,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -48,9 +46,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @JSONField(serialize = false)
     private HealthCheckTask checkTask;
 
+    //存放的持久化实例
     @JSONField(serialize = false)
     private Set<Instance> persistentInstances = new HashSet<>();
 
+    //存放的非持久化实例
     @JSONField(serialize = false)
     private Set<Instance> ephemeralInstances = new HashSet<>();
 

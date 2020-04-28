@@ -15,15 +15,6 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -43,13 +34,16 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 /**
  * Instance operation controller
@@ -90,6 +84,8 @@ public class InstanceController {
         }
     };
 
+
+    //服务端的注册接口，注册一个实例到服务。/nacos/v1/ns/instance
     @CanDistro
     @PostMapping
     public String register(HttpServletRequest request) throws Exception {

@@ -188,6 +188,7 @@ public class NamingProxy {
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
+        //注册一个实例到服务。
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
     }
@@ -304,6 +305,7 @@ public class NamingProxy {
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
+    //向服务端发送心跳
     public long sendBeat(BeatInfo beatInfo) {
         try {
             if (NAMING_LOGGER.isDebugEnabled()) {
@@ -313,6 +315,7 @@ public class NamingProxy {
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);
             params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
+            //调用服务端的服务
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
             JSONObject jsonObject = JSON.parseObject(result);
 

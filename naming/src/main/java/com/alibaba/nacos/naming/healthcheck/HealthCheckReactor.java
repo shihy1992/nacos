@@ -51,6 +51,7 @@ public class HealthCheckReactor {
     }
 
     public static void scheduleCheck(ClientBeatCheckTask task) {
+        //5s中做一次task中的run方法，进行服务健康检查
         futureMap.putIfAbsent(task.taskKey(), EXECUTOR.scheduleWithFixedDelay(task, 5000, 5000, TimeUnit.MILLISECONDS));
     }
 
