@@ -115,7 +115,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 }
             }
         });
-
+        //在初始化的时候，将notifier放入线程池中。这个notifier里面会通过addtask方法想阻塞队列里面加任务，每个任务是新的注册实例
         executor.submit(notifier);
     }
 
@@ -147,6 +147,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public void put(String key, Record value) throws NacosException {
+        //将注册实例更新到内存注册表
         onPut(key, value);
         taskDispatcher.addTask(key);
     }
@@ -368,6 +369,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             if (action == ApplyAction.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
+
+            //往阻塞队列tasks中放入注册实例数据。同一个服务只有一个副本，多个服务端来注册实例，只会放在阻塞队列里面慢慢去替换内存里面的注册表。所有更新是类似于单线程的，不会存在并发问题。
             tasks.add(Pair.with(datumKey, action));
         }
 
@@ -375,13 +378,16 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return tasks.size();
         }
 
+         //这个run方法是交给异步来给我们做的。在系统初始化的时候回启动一个线程池。参考com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl.init方法
         @Override
         public void run() {
             Loggers.DISTRO.info("distro notifier started");
 
+            //死循环
             while (true) {
                 try {
 
+                    //不断的从阻塞队列里面拿数据pair
                     Pair pair = tasks.take();
 
                     if (pair == null) {

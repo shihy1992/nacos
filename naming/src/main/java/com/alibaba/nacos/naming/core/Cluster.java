@@ -184,23 +184,27 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     public void updateIPs(List<Instance> ips, boolean ephemeral) {
-
+        //获取存放临时性实例的set或者是持久化的set
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
-
+        //存放的数据是，key-->ip+端口号+unknown+clusterName,value--->instance实例
         HashMap<String, Instance> oldIPMap = new HashMap<>(toUpdateInstances.size());
 
         for (Instance ip : toUpdateInstances) {
+            //getDatumKey()方法返回的值是，ip+端口号+unknown+clusterName
             oldIPMap.put(ip.getDatumKey(), ip);
         }
-
+        //入参是所有的instance和以前所有的旧的instance
+        //返回值是需要更新的instance实例
         List<Instance> updatedIPs = updatedIPs(ips, oldIPMap.values());
         if (updatedIPs.size() > 0) {
             for (Instance ip : updatedIPs) {
+                //根据需要更新的instance里面获取ip和端口号，从oldIPMap获取旧的instance实例
                 Instance oldIP = oldIPMap.get(ip.getDatumKey());
 
                 // do not update the ip validation status of updated ips
                 // because the checker has the most precise result
                 // Only when ip is not marked, don't we update the health status of IP:
+                //从旧的instance实例中获取健康标识给新的instance实例
                 if (!ip.isMarked()) {
                     ip.setHealthy(oldIP.isHealthy());
                 }
@@ -218,6 +222,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
+        //获取新增的instance实例
         List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
@@ -227,7 +232,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 HealthCheckStatus.reset(ip);
             }
         }
-
+        //获取老的里面存着而新的里面不存的instance实例，即死亡的instance的实例
         List<Instance> deadIPs = subtract(oldIPMap.values(), ips);
 
         if (deadIPs.size() > 0) {
@@ -242,51 +247,64 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         toUpdateInstances = new HashSet<>(ips);
 
         if (ephemeral) {
+            //将最新的注册表更新到内存
             ephemeralInstances = toUpdateInstances;
         } else {
             persistentInstances = toUpdateInstances;
         }
     }
 
+    //返回需要更新的instance
     public List<Instance> updatedIPs(Collection<Instance> a, Collection<Instance> b) {
 
+        //计算a和b的交集,这个代码的计算逻辑是按照内存地址来计算交集，即如果两个对象的所有字段都一样，在不同的集合中，但是这两个集合中这两个对象不是交集。同一个对象，在不同集合，则是会是交集对象。
+        //即，计算出来a和b中包含的地址相同的对象。
         List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(a, b);
+        //新建一个并发map用来存放交集数据，key是ip:port,value是instance。
         Map<String, Instance> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
 
         for (Instance instance : intersects) {
             stringIPAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
-
+        //可以存放所有数据长度的map，key是instance的字符串形式，value是标记。里面放的是a和b中的所有交集数据。
         Map<String, Integer> intersectMap = new ConcurrentHashMap<>(a.size() + b.size());
+        //放的是所有非交集的instance，key是instance的字符串形式，value是instance对象的引用
         Map<String, Instance> instanceMap = new ConcurrentHashMap<>(a.size());
+        //instanceMap1中存放所有a中的数据即新数据，key是instance的字符串形式，value是instance对象的引用
         Map<String, Instance> instanceMap1 = new ConcurrentHashMap<>(a.size());
-
+        //b是旧数据
         for (Instance instance : b) {
+            //如果b中包含了交集中的数据，即，旧的服务实例中有相同的ip和端口的服务
             if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                //这一步，intersectMap里面已经包含了所有的交集数据，并且都打上了标记1.
                 intersectMap.put(instance.toString(), 1);
             }
         }
 
-
+        //a是新数据
         for (Instance instance : a) {
+            //a中包含了相同的ip和端口的instance对象，但是有可能是一个全新的来自同一个服务的新的服务实例，即，新的服务实例中有来自相同的ip和端口的服务。那么接下来就要判断是否是同一个instance对象，是否需要更新
             if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
-
+                //紧接着判断交集数据中是否有需要更新的数据。即，拿a中数据和b中的数据进行比较。如果intersectMap已经包含了instance的字符串形式(上一步b中的操作)，且instance的内容没有改变，不需要更新。则标记为2
                 if (intersectMap.containsKey(instance.toString())) {
                     intersectMap.put(instance.toString(), 2);
-                } else {
+                } else {//如果intersectMap未包含了instance的字符串形式，说明instance的内容有改变，需要更新
                     intersectMap.put(instance.toString(), 1);
                 }
             }
-
+            //将a中的新数据放入到instanceMap1
             instanceMap1.put(instance.toString(), instance);
 
         }
-
+        //遍历交集数据，将value为1的放到instanceMap中。
+        //这个时候intersectMap里面包含所有的交集数据，其中value有的为2，有的为1，为1的数据可能来自a也可能来自b，2是肯定不需要更新的。1中有一部分来自于b，有一部分来自于a,来自于b的不需要更新，来自于a的需要更新。
         for (Map.Entry<String, Integer> entry : intersectMap.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
 
+            //表示是需要更新的，则放入到instanceMap中
             if (value == 1) {
+                //且是在新数据中包含的，则放入instanceMap
                 if (instanceMap1.containsKey(key)) {
                     instanceMap.put(key, instanceMap1.get(key));
                 }

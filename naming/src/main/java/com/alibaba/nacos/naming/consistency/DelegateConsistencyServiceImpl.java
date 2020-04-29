@@ -75,7 +75,11 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
 
+    //用来判断这个实例是临时的实例还是持久化的实例
     private ConsistencyService mapConsistencyService(String key) {
+        //根据前面拼接的key里面是否存在ephemeral这个标识。
+        //ephemeralConsistencyService实现的是AP的一个架构
+        //persistentConsistencyService实现的是CP的一个架构
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }
 }

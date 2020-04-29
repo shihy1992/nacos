@@ -501,14 +501,17 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void addInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
+        //拼接一个key，后期用来判断这个实例是持久化的还是临时的(利用key中是否存在ephemeral这个标识)，springcloud默认的ephemeral值就是true，即，所有的实例默认是临时的
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
         Service service = getService(namespaceId, serviceName);
 
         synchronized (service) {
+            //所有服务实例的集合
             List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
-
+            // Package of instance list
             Instances instances = new Instances();
+            //将所有服务实例的集合放到instances对象中
             instances.setInstanceList(instanceList);
 
             consistencyService.put(key, instances);

@@ -150,6 +150,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
     }
 
+
+    //Instances和Ips其实是同一回事，只是nacos代码不同人书写的原因
     @Override
     public void onChange(String key, Instances value) throws Exception {
 
@@ -170,7 +172,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 instance.setWeight(0.01D);
             }
         }
-
+        //Instances和Ips其实是同一回事，只是nacos代码不同人书写的原因
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
@@ -196,8 +198,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
+    //copyOnWrite的设计思想
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
+        //这个ipMap放的是key是clusterName的名字，value是一个空的List
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
+        //先从内存中copy出来一份
         for (String clusterName : clusterMap.keySet()) {
             ipMap.put(clusterName, new ArrayList<>());
         }
@@ -221,21 +226,25 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
+                //判断是否有新的cluster，如果没有就在copy的那一份里面加入新的clusterName。
                 List<Instance> clusterIPs = ipMap.get(instance.getClusterName());
                 if (clusterIPs == null) {
                     clusterIPs = new LinkedList<>();
                     ipMap.put(instance.getClusterName(), clusterIPs);
                 }
-
+                //在clusterName对应的List中放入instance实例
                 clusterIPs.add(instance);
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
             }
         }
 
+        //获取ipMap中的数据
         for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
+            //获取对应的list，里面包含了新老数据
             List<Instance> entryIPs = entry.getValue();
+            //clusterMap中获取cluster的名称所对应的那个Cluster实例。updateIPs更新的真正的逻辑，更新到注册表中
             clusterMap.get(entry.getKey()).updateIPs(entryIPs, ephemeral);
         }
 
