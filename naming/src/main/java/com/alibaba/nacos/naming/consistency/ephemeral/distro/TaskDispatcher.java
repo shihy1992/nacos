@@ -48,6 +48,7 @@ public class TaskDispatcher {
 
     private final int cpuCoreCount = Runtime.getRuntime().availableProcessors();
 
+    //初始化的时候，将TaskScheduler放入线程池。
     @PostConstruct
     public void init() {
         for (int i = 0; i < cpuCoreCount; i++) {
@@ -75,6 +76,7 @@ public class TaskDispatcher {
             this.index = index;
         }
 
+        //往阻塞队列里面放入注册实例数据
         public void addTask(String key) {
             queue.offer(key);
         }
@@ -90,7 +92,7 @@ public class TaskDispatcher {
             while (true) {
 
                 try {
-
+                    //从阻塞队里面不断的取出来实例数据
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
@@ -110,12 +112,17 @@ public class TaskDispatcher {
                         keys = new ArrayList<>();
                     }
 
+                    //将key直接添加到keys这个集合中
                     keys.add(key);
                     dataSize++;
 
+                    //如果注册的key达到了一定的数量，则开始走同步到其他节点的逻辑。默认的数量是1000。如果数量没有到达1000个，默认200ms进行一次同步
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
+                        //lastDispatchTime是上一次同步的时间
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
+                        //从conf文件中获取所有的集群配置
+                        //Server--->Member node of Nacos cluster
                         for (Server member : dataSyncer.getServers()) {
                             if (NetUtils.localServer().equals(member.getKey())) {
                                 continue;

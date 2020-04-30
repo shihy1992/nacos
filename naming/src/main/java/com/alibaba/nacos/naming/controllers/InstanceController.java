@@ -243,6 +243,7 @@ public class InstanceController {
             instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
+            //在心跳里面又注册了一次。目的是，服务端如果挂掉，因为实例是在内存里面保存的。所以在心跳的时候发现服务端没有我的实例了，就再注册一遍。
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
 

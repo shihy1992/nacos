@@ -32,6 +32,7 @@ import java.util.*;
  */
 public class NamingProxy {
 
+    //把数据发送给另外的集群节点
     private static final String DATA_ON_SYNC_URL = "/distro/datum";
 
     private static final String DATA_GET_URL = "/distro/datum";
@@ -112,7 +113,7 @@ public class NamingProxy {
 
     public static boolean syncData(byte[] data, String curServer) {
         Map<String, String> headers = new HashMap<>(128);
-        
+
         headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
         headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         headers.put("Accept-Encoding", "gzip,deflate,sdch");
@@ -120,6 +121,7 @@ public class NamingProxy {
         headers.put("Content-Encoding", "gzip");
 
         try {
+            //发起一个http请求给别的集群节点去同步数据
             HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
             if (HttpURLConnection.HTTP_OK == result.code) {

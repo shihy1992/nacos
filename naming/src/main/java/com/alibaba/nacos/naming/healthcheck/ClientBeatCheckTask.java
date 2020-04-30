@@ -71,10 +71,12 @@ public class ClientBeatCheckTask implements Runnable {
                 return;
             }
 
+            //定时的从内存中把instance拿出来
             List<Instance> instances = service.allIPs(true);
 
             // first set health status of instances:
             for (Instance instance : instances) {
+                //判断当前的时间和上一次的心跳时间的差值，和15s进行比较。如果大于15s都还没有给我发送心跳，则认为这个服务有问题，已经不健康了，设置健康状态值为false。
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
@@ -99,7 +101,7 @@ public class ClientBeatCheckTask implements Runnable {
                 if (instance.isMarked()) {
                     continue;
                 }
-
+                //如果大于30s还没有发送心跳，则将服务下线。这一步是为了，万一之前因为网络原因的15s到30s发送了心跳。
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));

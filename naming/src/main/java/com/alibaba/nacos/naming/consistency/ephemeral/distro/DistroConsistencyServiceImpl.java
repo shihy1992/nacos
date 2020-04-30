@@ -149,6 +149,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     public void put(String key, Record value) throws NacosException {
         //将注册实例更新到内存注册表
         onPut(key, value);
+        //同步节点数据到其他集群节点
         taskDispatcher.addTask(key);
     }
 

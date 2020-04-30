@@ -60,6 +60,7 @@ public class DistroController {
     @Autowired
     private SwitchDomain switchDomain;
 
+    //集群同步接口，实际还是调用了onPut方法，原理同注册原理
     @PutMapping("/datum")
     public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
 

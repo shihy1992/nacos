@@ -113,7 +113,9 @@ public class DataSyncer {
             byte[] data = serializer.serialize(datumMap);
 
             long timestamp = System.currentTimeMillis();
+            //集群同步
             boolean success = NamingProxy.syncData(data, task.getTargetServer());
+            //如果没有同步成功，重新同步
             if (!success) {
                 SyncTask syncTask = new SyncTask();
                 syncTask.setKeys(task.getKeys());
@@ -147,6 +149,7 @@ public class DataSyncer {
         }
 
         // TODO may choose other retry policy.
+        //5s重新发送，逻辑有点low，若一个节点挂掉了，会一直被重试
         submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 

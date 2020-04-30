@@ -252,7 +252,7 @@ public class HostReactor {
                 }
             }
         }
-
+        //定时获取服务端最新服务数据并更新到本地内存，1s一次。主动的拉去。服务端也会主动的推送，是udp推送
         scheduleUpdateIfAbsent(serviceName, clusters);
 
         return serviceInfoMap.get(serviceObj.getKey());
