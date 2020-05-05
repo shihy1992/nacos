@@ -371,7 +371,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 services.put(datumKey, StringUtils.EMPTY);
             }
 
-            //往阻塞队列tasks中放入注册实例数据。同一个服务只有一个副本，多个服务端来注册实例，只会放在阻塞队列里面慢慢去替换内存里面的注册表。所有更新是类似于单线程的，不会存在并发问题。
+            //往阻塞队列tasks中放入注册实例数据。同一个服务只有一个副本，多个服务提供者注册实例，只会放在阻塞队列里面慢慢去替换内存里面的注册表。所有更新是类似于单线程的，不会存在并发问题。
             tasks.add(Pair.with(datumKey, action));
         }
 

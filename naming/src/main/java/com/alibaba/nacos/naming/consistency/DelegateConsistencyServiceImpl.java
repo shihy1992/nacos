@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service("consistencyDelegate")
-public class DelegateConsistencyServiceImpl implements ConsistencyService {
+    public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private PersistentConsistencyService persistentConsistencyService;
