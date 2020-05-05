@@ -180,17 +180,20 @@ public class RaftCore {
             JSONObject json = new JSONObject();
             json.put("datum", datum);
             json.put("source", peers.local());
-
+            //更新注册实例数据，到内存和硬盘文件上
             onPublish(datum, peers.local());
 
             final String content = JSON.toJSONString(json);
-
+            //CountDownLatch
+            //majorityCount()集群节点一半
             final CountDownLatch latch = new CountDownLatch(peers.majorityCount());
             for (final String server : peers.allServersIncludeMyself()) {
+                //如果是自己，直接跳过，countDown减1
                 if (isLeader(server)) {
                     latch.countDown();
                     continue;
                 }
+                //给每个slave发同步消息
                 final String url = buildURL(server, API_ON_PUB);
                 HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content, new AsyncCompletionHandler<Integer>() {
                     @Override
@@ -200,6 +203,7 @@ public class RaftCore {
                                 datum.key, server, response.getStatusCode());
                             return 1;
                         }
+                        //每个slave返回消息，countDown减1。countDown减完，就表示有过半的机器同步完成
                         latch.countDown();
                         return 0;
                     }
@@ -312,7 +316,7 @@ public class RaftCore {
             }
         }
         raftStore.updateTerm(local.term.get());
-
+        //异步写内存
         notifier.addTask(datum.key, ApplyAction.CHANGE);
 
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
